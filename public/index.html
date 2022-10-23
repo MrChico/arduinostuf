@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Signal Ramping</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="icon" type="image/png" sizes="174x174" href="./favicon.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webcomponentsjs/2.4.3/webcomponents-bundle.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet"/>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./node_modules/tone/build/Tone.js"></script>
+  </head>
+  <body>
+    Moving the rotary left and right pitches the noise up and down
+    <div>
+      <button type="button" id="playme" onclick="play()">PLAY!</button>
+      <input type="range" min="0" max="20" value="0" class="slider" id="pitchshift">
+    </div>
+
+    <script type="text/javascript">
+      var socket = io();
+      const webAudioGain = Tone.getContext().createGain()
+
+      const pitchshift = new Tone.PitchShift({
+	  delayTime: 0.1,
+	  windowSize: 0.03,
+	  feedback: 0,
+	  wet: 1
+      }).toDestination();
+
+      const player = new Tone.Player("./pendulum_noise.mp3")
+	    .connect(pitchshift);
+      player.loop = true;
+
+      var playing = false;
+
+      function play() {
+	  if (playing) {
+	      player.stop();
+	      playing = false;
+	      document.getElementById("playme").innerHTML = "PLAY!"
+	  }
+	  else {
+	      player.start();
+	      playing = true;
+	      document.getElementById("playme").innerHTML = "STOP!"
+	  }
+      }
+
+
+      socket.on('rotary', function(msg) {
+	  document.getElementById("pitchshift").value = msg;
+	  pitchshift.pitch = msg;
+      });
+
+      document.querySelector("#pitchshift").addEventListener("input", e => {
+	  pitchshift.pitch = parseFloat(e.target.value);
+      })
+      
+    </script>
+  </body>
+</html>
