@@ -24,22 +24,33 @@ io.on('connection', (socket) => {
 });
 
 board.on("ready", function() {
-    console.log('board is ready')
-    const sens0 = new five.Sensor.Digital(0);
-    const sens1 = new five.Sensor.Digital(1);
-    var a = sens0.value;
-    var b = sens1.value;
-    var counter = 0;
-    sens0.on("change", function() {
-	counter += (this.value - a) * (sens1.value == 1 ? (-1) : 1)
-	io.emit('rotary', counter)
-	a = this.value;
-    });
-    sens1.on("change", function() {
-	counter += (this.value - b) * (sens0.value == 1 ? 1 : (-1))
-	io.emit('rotary', counter)
-	b = this.value
-    });
+    console.log("board online");
+  var gyro = new five.Gyro({
+      controller: "MPU6050",
+  });
+  gyro.recalibrate();// Tell the device to recalibrate
+    var pitch = gyro.pitch.angle;
+    var roll  = gyro.roll.angle;
+    var yaw   = gyro.yaw.angle;
+    gyro.on("change", function() {
+      if (   Math.abs(this.pitch.angle - pitch) > 1
+	  || Math.abs(this.roll.angle - roll) > 1
+	  || Math.abs(this.yaw.angle - yaw) > 1
+	 ) {
+	  console.log("gyro");
+	  console.log("  x            : ", this.x);
+	  console.log("  y            : ", this.y);
+	  console.log("  z            : ", this.z);
+	  console.log("  pitch        : ", this.pitch);
+	  console.log("  roll         : ", this.roll);
+	  console.log("  yaw          : ", this.yaw);
+	  console.log("  rate         : ", this.rate);
+	  pitch = gyro.pitch.angle;
+	  roll  = gyro.roll.angle;
+	  yaw   = gyro.yaw.angle;
+	  io.emit('gyro', {pitch: this.pitch, roll: this.roll, yaw: this.yaw})
+      }
+  });
 })
 
 

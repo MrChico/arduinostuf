@@ -16,24 +16,79 @@
   <body>
     Moving the rotary left and right pitches the noise up and down
     <div>
+      NOISY THING:
       <button type="button" id="playme" onclick="play()">PLAY!</button>
-      <input type="range" min="0" max="20" value="0" class="slider" id="pitchshift">
+      Volume:
+      <input type="range" min="-40" max="0" step="0.1" value="0" class="slider" id="volume">
+      Pitch shift:
+      <input type="range" min="0" max="10" step="0.1" value="0" class="slider" id="pitchshift">
+      Window size:
+      <input type="range" min="0.03" max="0.1" step="0.01" value="0.1" class="slider" id="pitchshiftwindow">
+      Feedback:
+      <input type="range" min="0" max="0.8" step="0.01" value="0.75" class="slider" id="pitchshiftfeedback">
+      
+    </div>
+
+    <div>
+      CAR HORN THING:
+      <button type="button" id="playme2" onclick="play2()">PLAY!</button>
+      Volume:
+      <input type="range" min="-40" max="0" step="0.1" value="0" class="slider" id="volume2">
+      Pitch shift:
+      <input type="range" min="0" max="0.5" step="0.01" value="0" class="slider" id="pitchshift2">
+      Window size:
+      <input type="range" min="0.03" max="0.1" step="0.01" value="0.05" class="slider" id="pitchshiftwindow2">
+      Feedback:
+      <input type="range" min="0" max="0.8" step="0.01" value="0.05" class="slider" id="pitchshiftfeedback2">
+      
+    </div>
+    <div>
+      METALLIC NIGHTMARE:
+      <button type="button" id="playme3" onclick="play3()">PLAY!</button>
+      Volume:
+      <input type="range" min="-40" max="0" step="0.1" value="0" class="slider" id="volume3">
+      Pitch shift:
+      <input type="range" min="0" max="5" step="0.01" value="0" class="slider" id="pitchshift3">
+      Window size:
+      <input type="range" min="0.03" max="0.1" step="0.01" value="0.05" class="slider" id="pitchshiftwindow3">
+      Feedback:
+      <input type="range" min="0" max="0.8" step="0.01" value="0.05" class="slider" id="pitchshiftfeedback3">
+      
     </div>
 
     <script type="text/javascript">
+
+
+
       var socket = io();
       const webAudioGain = Tone.getContext().createGain()
 
       const pitchshift = new Tone.PitchShift({
 	  delayTime: 0.1,
-	  windowSize: 0.03,
+	  windowSize: 0.1,
+	  feedback: 0.5,
+	  wet: 1
+      }).toDestination();
+
+      const pitchshift2 = new Tone.PitchShift({
+	  delayTime: 0.1,
+	  windowSize: 0.05,
+	  feedback: 0.5,
+	  wet: 1
+      }).toDestination();
+
+
+      const pitchshift3 = new Tone.PitchShift({
+	  delayTime: 0.1,
+	  windowSize: 0.05,
 	  feedback: 0,
 	  wet: 1
       }).toDestination();
 
       const player = new Tone.Player("./pendulum_noise.mp3")
-	    .connect(pitchshift);
+	    .connect(pitchshift)
       player.loop = true;
+      player.volume.rampTo(document.getElementById("volume").value)
 
       var playing = false;
 
@@ -46,19 +101,164 @@
 	  else {
 	      player.start();
 	      playing = true;
+	      redraw();
 	      document.getElementById("playme").innerHTML = "STOP!"
 	  }
       }
 
+      const player2 = new Tone.Player("./pendulum_traffic.mp3")
+	    .connect(pitchshift2)
+      player2.loop = true;
+      player2.volume.rampTo(document.getElementById("volume2").value)
+      
+      var playing2 = false;
 
-      socket.on('rotary', function(msg) {
-	  document.getElementById("pitchshift").value = msg;
-	  pitchshift.pitch = msg;
-      });
+      function play2() {
+	  if (playing2) {
+	      player2.stop();
+	      playing2 = false;
+	      document.getElementById("playme2").innerHTML = "PLAY!"
+	  }
+	  else {
+	      player2.start();
+	      playing2 = true;
+	      document.getElementById("playme2").innerHTML = "STOP!"
+	  }
+      }
+      const player3 = new Tone.Player("./pendulum_metallic_nightmare.mp3")
+	    .connect(pitchshift3)
+      player3.loop = true;
+      player3.volume.rampTo(document.getElementById("volume3").value)
+      
+      var playing3 = false;
+
+      function play3() {
+	  if (playing3) {
+	      player3.stop();
+	      playing3 = false;
+	      document.getElementById("playme3").innerHTML = "PLAY!"
+	  }
+	  else {
+	      player3.start();
+	      playing3 = true;
+	      document.getElementById("playme3").innerHTML = "STOP!"
+	  }
+      }
+      var pitch = 0;
+      var roll = 0;
+      var yaw = 0;
+      var pitchNew = 0;
+      var rollNew = 0;
+      var yawNew = 0;
+
+
+      document.querySelector("#volume").addEventListener("input", e => {
+	  player.volume.rampTo(parseFloat(e.target.value), 0.2);
+      })
+
 
       document.querySelector("#pitchshift").addEventListener("input", e => {
 	  pitchshift.pitch = parseFloat(e.target.value);
+	  pitchNew = parseFloat(e.target.value);
       })
+
+      document.querySelector("#pitchshiftwindow").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift.windowSize = parseFloat(e.target.value);
+      })
+
+      document.querySelector("#pitchshiftfeedback").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift.feedback = parseFloat(e.target.value);
+      })
+      
+      document.querySelector("#volume2").addEventListener("input", e => {
+	  player2.volume.rampTo(parseFloat(e.target.value), 0.2);
+      })
+
+
+      document.querySelector("#pitchshift2").addEventListener("input", e => {
+	  pitchshift2.pitch = parseFloat(e.target.value);
+      })
+
+      document.querySelector("#pitchshiftwindow2").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift2.windowSize = parseFloat(e.target.value);
+      })
+
+      document.querySelector("#pitchshiftfeedback2").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift2.feedback = parseFloat(e.target.value);
+      })
+      
+      document.querySelector("#volume3").addEventListener("input", e => {
+	  player3.volume.rampTo(parseFloat(e.target.value), 0.2);
+      })
+
+
+      document.querySelector("#pitchshift3").addEventListener("input", e => {
+	  pitchshift3.pitch = parseFloat(e.target.value);
+      })
+
+      document.querySelector("#pitchshiftwindow3").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift3.windowSize = parseFloat(e.target.value);
+      })
+
+      document.querySelector("#pitchshiftfeedback3").addEventListener("input", e => {
+	  console.log(parseFloat(e.target.value));
+	  pitchshift3.feedback = parseFloat(e.target.value);
+      })
+
+
+
+      socket.on('gyro', function(msg) {
+	  pitch = pitchNew;
+	  roll  = rollNew;
+          yaw   = yawNew;
+
+          pitchNew = msg.pitch.angle;
+	  rollNew  = msg.roll.angle;
+          yawNew   = msg.yaw.angle;
+	  console.log("  deltaX       : ", Math.floor(pitchNew - pitch));
+	  console.log("  delayY       : ", Math.floor(rollNew - roll));
+	  console.log("  delayZ       : ", Math.floor(yawNew - yaw));
+	  
+      });
+
+      function setup() {
+	  createCanvas(400, 400, WEBGL);
+      }
+
+      function draw() {
+	  angleMode(DEGREES); // Change the mode to DEGREES
+	  background(220);
+	  let xAxis = createVector(1,0,0);
+	  let yAxis = createVector(0,1,0);
+	  let zAxis = createVector(0,0,1);
+	  rotate(pitchNew / 4, xAxis);
+	  rotate(rollNew / 4,  yAxis);
+	  rotate(yawNew / 4,   zAxis);
+	  angleMode(RADIANS); // Change the mode to DEGREES
+	  push();
+	  let r_max = 100;
+	  for (let i = 0; i < 10000; i++) {
+	      let r = (1 / sqrt(random())) * r_max;
+	      let theta = random(TWO_PI);
+	      let x = cos(theta) * r;
+	      let y = sin(theta) * r;
+	      let z = random() * 2;
+	      point(x, y, z);
+	  }
+	  camera(200, 200, 200);
+	  pop();
+	  if (playing) {
+	      loop()
+	  } else {
+	      noLoop()
+	  }
+      }
+      
       
     </script>
   </body>
