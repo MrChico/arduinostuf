@@ -241,39 +241,62 @@
 	  
       });
 
+      let positions = [];
+      let t = 0;
+      let num = 10000;
+      let radius = 200;
+      let wind = 1;
+      let gravity = 5;
+      let initialPositions = [];
+
+
+      
       function setup() {
  	  let c = createCanvas(windowWidth, windowHeight, WEBGL);
  	  c.elt.addEventListener("click", play3);
+	  for (let i = 0; i < num; i++) {
+  	      let r = (1 / sqrt(random())) * radius;
+  	      let theta = random(TWO_PI);
+  	      let x = cos(theta) * r;
+  	      let y = sin(theta) * r;
+  	      let z = random() * 2;
+  	      positions.push({"x": x, "y": y, "z": z});
+	      initialPositions.push({"x": x, "y": y, "z": z});
+          }
       }
 
-function draw() {
- angleMode(DEGREES); // Change the mode to DEGREES
- background(360);
- let xAxis = createVector(1,0,0);
- let yAxis = createVector(0,1,0);
- let zAxis = createVector(0,0,1);
- rotate(pitchNew / 4, xAxis);
- rotate(rollNew / 4,  yAxis);
- rotate(yawNew / 4,   zAxis);
- angleMode(RADIANS); // Change the mode to DEGREES
- push();
- let r_max = 100;
- for (let i = 0; i < 10000; i++) {
-     let r = (1 / sqrt(random())) * r_max;
-     let theta = random(TWO_PI);
-     let x = cos(theta) * r;
-     let y = sin(theta) * r;
-     let z = random() * 2;
-     point(x, y, z);
- }
- camera(200, 200, 200);
- pop();
- if (playing) {
-     loop()
- } else {
-     noLoop()
- }
-}
+      function draw() {
+	  angleMode(DEGREES); // Change the mode to DEGREES
+	  background(360);
+	  let xAxis = createVector(1,0,0);
+	  let yAxis = createVector(0,1,0);
+	  let zAxis = createVector(0,0,1);
+	  rotate(pitchNew / 4, xAxis);
+	  rotate(rollNew / 4,  yAxis);
+	  rotate(yawNew / 4,   zAxis);
+	  push();
+	  t += 0.01;
+	  for (let i = 0; i < num; i++) {
+	      let x = positions[i].x;
+	      let y = positions[i].y;
+	      let distance = sqrt(x ** 2 + y ** 2);
+	      if (Number.isNaN(x) || Number.isNaN(y)) {
+		  positions[i].x = initialPositions[i].x;		  
+		  positions[i].y = initialPositions[i].y;
+	      } else {
+		  positions[i].x = x + wind * (sqrt(distance - radius)) * (noise(t, i) - 0.5);
+		  positions[i].y = y + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
+	      }
+	      point(positions[i].x, positions[i].y, positions[i].z);
+	  }
+	  camera(200, 200, 200);
+	  pop();
+	  if (playing) {
+	      loop()
+	  } else {
+	      noLoop()
+	  }
+      }
 
  //      function windowResized() {
  // 	  resizeCanvas(windowWidth, windowHeight);
