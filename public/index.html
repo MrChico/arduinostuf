@@ -245,8 +245,8 @@
       let t = 0;
       let num = 10000;
       let radius = 200;
-      let wind = 1;
-      let gravity = 5;
+      let wind = 2;
+      let gravity = 0.0005;
       let initialPositions = [];
 
 
@@ -284,8 +284,10 @@
 		  positions[i].x = initialPositions[i].x;		  
 		  positions[i].y = initialPositions[i].y;
 	      } else {
-		  positions[i].x = x + wind * (sqrt(distance - radius)) * (noise(t, i) - 0.5);
-		  positions[i].y = y + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
+		  positions[i].x = x - gravity * x * sqrt(distance)
+		      + wind * (sqrt(distance - radius)) * (noise(t, i) - 0.5);
+		  positions[i].y = y - gravity * y * sqrt(distance)
+		      + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
 	      }
 	      point(positions[i].x, positions[i].y, positions[i].z);
 	  }
