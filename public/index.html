@@ -241,39 +241,39 @@
 	  
       });
 
- //      function setup() {
- // 	  let c = createCanvas(windowWidth, windowHeight, WEBGL);
- // 	  c.elt.addEventListener("click", play3);
- //      }
+      function setup() {
+ 	  let c = createCanvas(windowWidth, windowHeight, WEBGL);
+ 	  c.elt.addEventListener("click", play3);
+      }
 
- //      xcfunction draw() {
- // 	  angleMode(DEGREES); // Change the mode to DEGREES
- // 	  background(360);
- // 	  let xAxis = createVector(1,0,0);
- // 	  let yAxis = createVector(0,1,0);
- // 	  let zAxis = createVector(0,0,1);
- // 	  rotate(pitchNew / 4, xAxis);
- // 	  rotate(rollNew / 4,  yAxis);
- // 	  rotate(yawNew / 4,   zAxis);
- // 	  angleMode(RADIANS); // Change the mode to DEGREES
- // 	  push();
- // 	  let r_max = 100;
- // 	  for (let i = 0; i < 10000; i++) {
- // 	      let r = (1 / sqrt(random())) * r_max;
- // 	      let theta = random(TWO_PI);
- // 	      let x = cos(theta) * r;
- // 	      let y = sin(theta) * r;
- // 	      let z = random() * 2;
- // 	      point(x, y, z);
- // 	  }
- // 	  camera(200, 200, 200);
- // 	  pop();
- // 	  if (playing) {
- // 	      loop()
- // 	  } else {
- // 	      noLoop()
- // 	  }
- //      }
+function draw() {
+ angleMode(DEGREES); // Change the mode to DEGREES
+ background(360);
+ let xAxis = createVector(1,0,0);
+ let yAxis = createVector(0,1,0);
+ let zAxis = createVector(0,0,1);
+ rotate(pitchNew / 4, xAxis);
+ rotate(rollNew / 4,  yAxis);
+ rotate(yawNew / 4,   zAxis);
+ angleMode(RADIANS); // Change the mode to DEGREES
+ push();
+ let r_max = 100;
+ for (let i = 0; i < 10000; i++) {
+     let r = (1 / sqrt(random())) * r_max;
+     let theta = random(TWO_PI);
+     let x = cos(theta) * r;
+     let y = sin(theta) * r;
+     let z = random() * 2;
+     point(x, y, z);
+ }
+ camera(200, 200, 200);
+ pop();
+ if (playing) {
+     loop()
+ } else {
+     noLoop()
+ }
+}
 
  //      function windowResized() {
  // 	  resizeCanvas(windowWidth, windowHeight);
@@ -293,74 +293,69 @@
  // 	  rotate(45, yAxis);
  // 	  circle(0, 0, 600);
  // }
-$.get('http://www.cloudflare.com/cdn-cgi/trace', function(data) {
-  // Convert key-value pairs to JSON
-  // https://stackoverflow.com/a/39284735/452587
-  data = data.trim().split('\n').reduce(function(obj, pair) {
-    pair = pair.split('=');
-    return obj[pair[0]] = pair[1], obj;
-  }, {});
-  console.log(data);
-});
+// $.getJSON('http://www.cloudflare.com/cdn-cgi/trace', function(data) {
+//   console.log(data);
+// });
       
-var table;
-      p5.disableFriendlyErrors = true;
-function preload() {
-    table = loadTable("smolerflights.csv","csv","header")
-}
-      function dedup(arr) {
-	  return arr.filter((item,i) => arr.indexOf(item) === i);
-      }
-      let filtered = [];
+// var table;
+//       p5.disableFriendlyErrors = true;
+// function preload() {
+//     table = loadTable("smolerflights.csv","csv","header")
+// }
+//       function dedup(arr) {
+// 	  return arr.filter((item,i) => arr.indexOf(item) === i);
+//       }
+//       let filtered = [];
       
       
-      function setup() {
-	  createCanvas(windowWidth,windowHeight, WEBGL)
-	  //  noStroke()
-	  //  fill(0,0,255,10)
+//       function setup() {
+// 	  createCanvas(windowWidth,windowHeight, WEBGL)
+// 	  //  noStroke()
+// 	  //  fill(0,0,255,10)
 	  
-	  background(255,255,255)
-	  var rows = table.getRows()
-	  pos = [];
-	  for (var r = 0; r < rows.length; r++) {
-	      pos.push({"lat": rows[r].getNum("from_lat"), "lon": rows[r].getNum("from_long")});
-	      //	from_long.push(rows[r].getNum("from_long"));
-	  }
-	  filtered = dedup(pos);
-      }
+// 	  background(255,255,255)
+// 	  var rows = table.getRows()
+// 	  pos = [];
+// 	  for (var r = 0; r < rows.length; r++) {
+// 	      pos.push({"lat": rows[r].getNum("from_lat"), "lon": rows[r].getNum("from_long")});
+// 	      //	from_long.push(rows[r].getNum("from_long"));
+// 	  }
+// 	  filtered = dedup(pos);
+//       }
 
-      let diameter = 600;
-      let radius = diameter / 2;
+//       let diameter = 600;
+//       let radius = diameter / 2;
 
       
-      function draw() {
-	  angleMode(DEGREES)
-	  background(0,0,0)
-	  rotate(5, createVector(0,0,1));
-	  let yAxis = createVector(0,1,0);
-	  // // //      rotate(90, createVector(1,0,0));
-	  rotate(frameCount / 4, yAxis);
-	  stroke('white')
-	  for (var i = 0; i < filtered.length; i++) {
-	      let lon = filtered[i].lon;
-	      let lat = filtered[i].lat;
- 	      let x = radius * cos(- lat) * cos(lon);
-	      let z = radius * cos(- lat) * sin(lon);
-	      let y = radius * sin(- lat);
-	      point(x,y,z);
-	  }
-	  stroke('gray');
-//	  curveDetail(1);
-	  noFill();
-	  ellipse(0, 0, diameter, diameter, 40);
-	  rotate(45, yAxis);
-	  ellipse(0, 0, diameter, diameter, 40);
-	  rotate(45, yAxis);
-	  ellipse(0, 0, diameter, diameter, 40);
-	  rotate(45, yAxis);
-	  ellipse(0, 0, diameter, diameter, 40);
+//       function draw() {
+// 	  angleMode(DEGREES)
+// 	  background(0,0,0)
+// 	  rotate(5, createVector(0,0,1));
+// 	  let yAxis = createVector(0,1,0);
+// 	  // // //      rotate(90, createVector(1,0,0));
+// 	  rotate(frameCount / 4, yAxis);
+// 	  for (var i = 0; i < filtered.length; i++) {
+// 	      let lon = filtered[i].lon;
+// 	      let lat = filtered[i].lat;
+//  	      let x = radius * cos(- lat) * cos(lon);
+// 	      let z = radius * cos(- lat) * sin(lon);
+// 	      let y = radius * sin(- lat);
+// //	      stroke('white')
+// 	      stroke(color('hsb(0, 0%, ' + (60 + sin((x + y + z) / 8) * random(40)).toString() + '%' +')'));
+// 	      point(x,y,z);
+// 	  }
+// 	  stroke('gray');
+// //	  curveDetail(1);
+// 	  noFill();
+// 	  ellipse(0, 0, diameter, diameter, 40);
+// 	  rotate(45, yAxis);
+// 	  ellipse(0, 0, diameter, diameter, 40);
+// 	  rotate(45, yAxis);
+// 	  ellipse(0, 0, diameter, diameter, 40);
+// 	  rotate(45, yAxis);
+// 	  ellipse(0, 0, diameter, diameter, 40);
 
-      }
+//       }
 //       function setup() {
 // 	  createCanvas(windowWidth, windowHeight,WEBGL)
 // 	  var rows = table.getRows()
