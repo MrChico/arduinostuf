@@ -54,14 +54,24 @@
     <!--   Feedback: -->
     <!--   <input type="range" min="0" max="0.8" step="0.01" value="0.05" class="slider" id="pitchshiftfeedback3"> -->
       
-    <!-- </div> -->
+      <!-- </div> -->
+    <div id="controls">
+    <h1 id="framerate" height="20px"></h1>
+    <h3>Particles</h3>
+    <input type="range" min="1" max="10000" step="20" value="1000" class="slider" id="nParticles" onchange="reinit()">
+    <h3>Gyro avg</h3>
+    <input type="range" min="0" max="100" step="1" value="10" class="slider" id="avg" onchange="reinit()">
+    </div>
     <style>
       .interface {
 	  display: none;
       }
+      * {
+	  margin: 0;
+      }
     </style>
     <script type="text/javascript">
-
+//      p5.disableFriendlyErrors = true;
 
 
       var socket = io();
@@ -152,13 +162,6 @@
 //	      document.getElementById("playme3").innerHTML = "STOP!"
 	  }
       }
-      var pitch = 0;
-      var roll = 0;
-      var yaw = 0;
-      var pitchNew = 0;
-      var rollNew = 0;
-      var yawNew = 0;
-
 
       // document.querySelector("#volume").addEventListener("input", e => {
       // 	  player.volume.rampTo(parseFloat(e.target.value), 0.2);
@@ -218,37 +221,36 @@
       // 	  pitchshift3.feedback = parseFloat(e.target.value);
       // })
 
-
-
+      var pitches = [];
+      var rolls = [];
+      var yaws = [];
+      let i = 0;
+      let pitch = 0;
+      let roll = 0;
+      let yaw = 0;
       socket.on('gyro', function(msg) {
-	  pitch = pitchNew;
-	  roll  = rollNew;
-          yaw   = yawNew;
-
-          pitchNew = msg.pitch.angle;
-	  rollNew  = msg.roll.angle;
-          yawNew   = msg.yaw.angle;
-//	  document.querySelector("#pitchshift").value = (pitchNew % 360) / 72;
-	  pitchshift.pitch = (pitchNew % 360) / 36;
-//	  document.querySelector("#pitchshift2").value = (rollNew % 360) / 72;
-	  pitchshift2.pitch = (rollNew % 360) / 120;
-//	  document.querySelector("#pitchshift3").value = (yawNew % 360) / 72;
-	  pitchshift3.pitch = (yawNew % 360) / 72;
-	  console.log(" yawNew: " + yawNew);
-	  console.log("  deltaX       : ", Math.floor(pitchNew - pitch));
-	  console.log("  delayY       : ", Math.floor(rollNew - roll));
-	  console.log("  delayZ       : ", Math.floor(yawNew - yaw));
-	  
+          pitches[i] = msg.pitch;
+	  rolls[i]  = msg.roll;
+          yaws[i]   = msg.yaw;
+	  i++;
+	  i = i % document.getElementById("avg").value;
+	  pitch = avg(pitches);
+	  roll = avg(rolls);
+	  yaw = avg(yaws);
       });
 
       let positions = [];
       let t = 0;
-      let num = 10000;
+      let num = document.getElementById("nParticles").value;
       let radius = 200;
       let wind = 2;
-      let gravity = 0.0005;
+      let gravity = 0.00004;
       let initialPositions = [];
 
+      function reinit() {
+	  num = document.getElementById("nParticles").value;
+	  i = document.getElementById("avg").value;
+      }
 
       
       function setup() {
@@ -265,30 +267,36 @@
           }
       }
 
+      let sum = ((array) => array.reduce((a, b) => a + b, 0));
+      let avg = ((array) => sum(array) / array.length);
+
       function draw() {
 	  angleMode(DEGREES); // Change the mode to DEGREES
-	  background(360);
+	  background(0);
+	  document.getElementById('framerate').innerHTML = "Framerate: " + frameRate();
 	  let xAxis = createVector(1,0,0);
 	  let yAxis = createVector(0,1,0);
 	  let zAxis = createVector(0,0,1);
-	  rotate(pitchNew / 4, xAxis);
-	  rotate(rollNew / 4,  yAxis);
-	  rotate(yawNew / 4,   zAxis);
+	  rotate(pitch, xAxis);
+	  rotate(roll,  yAxis);
+	  rotate(yaw,   zAxis);
 	  push();
 	  t += 0.01;
 	  for (let i = 0; i < num; i++) {
 	      let x = positions[i].x;
 	      let y = positions[i].y;
 	      let distance = sqrt(x ** 2 + y ** 2);
-	      if (Number.isNaN(x) || Number.isNaN(y)) {
-		  positions[i].x = initialPositions[i].x;		  
+	      if (Number.isNaN(x) || Number.isNaN(y) || y == 0 || x == 0) {
+		  positions[i].x = initialPositions[i].x;
 		  positions[i].y = initialPositions[i].y;
 	      } else {
-		  positions[i].x = x - gravity * x * sqrt(distance)
-		      + wind * (sqrt(distance - radius)) * (noise(t, i) - 0.5);
-		  positions[i].y = y - gravity * y * sqrt(distance)
+		  positions[i].x = x - gravity * x * distance
+		      + wind * (sqrt(distance - radius)) * (noise(t, i) - .5);
+		  positions[i].y = y - gravity * y * distance
 		      + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
 	      }
+	      strokeWeight((noise(t, i) * 8 + 3));
+	      stroke('white')
 	      point(positions[i].x, positions[i].y, positions[i].z);
 	  }
 	  camera(200, 200, 200);
