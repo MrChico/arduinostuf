@@ -99,22 +99,22 @@ async function setup() {
         guardrails();
 }
 
-var pitch = 0;
-var roll = 0;
-var yaw = 0;
+// var pitch = 0;
+// var roll = 0;
+// var yaw = 0;
 
-socket.on('gyro', function(msg) {
+// socket.on('gyro', function(msg) {
    
-    pitch = msg.pitch.angle;
-    roll  = msg.roll.angle;
-    yaw   = msg.yaw.angle;
-    console.log("  pitch       : ", pitch);
-    console.log("  roll        : ", roll);
-    console.log("  yaw         : ", yaw);
-    document.getElementById("rate").value = pitch / 360;
-    document.getElementById("rate2").value = roll / 360;
-    document.getElementById("rate3").value = yaw / 360;
-});
+//     pitch = msg.pitch.angle;
+//     roll  = msg.roll.angle;
+//     yaw   = msg.yaw.angle;
+//     console.log("  pitch       : ", pitch);
+//     console.log("  roll        : ", roll);
+//     console.log("  yaw         : ", yaw);
+//     document.getElementById("rate").value = pitch / 360;
+//     document.getElementById("rate2").value = roll / 360;
+//     document.getElementById("rate3").value = yaw / 360;
+// });
 
 function loadRNBOScript(version) {
     return new Promise((resolve, reject) => {

@@ -14,9 +14,7 @@ app.use(express.static(path.join(__dirname, '/')));
 app.use('/css', express.static(__dirname + '/css'));
 
 app.get('/', (req, res) => {
-    res.sendFile('index.html', {
-	root: (__dirname + '/public')
-    });
+    res.sendFile('index.html')
 });
 
 io.on('connection', (socket) => {
@@ -28,7 +26,6 @@ server.listen(3000, () => {
 })
 var udpPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
-    //    localAddress: "127.0.0.1",
     localPort: 5000,
     metadata: true
 });
@@ -50,7 +47,14 @@ let gyroAngleY = 0
 let gyroZ = 0;
 let initialized = false;
 
+const udp = require('dgram')
+
+// creating a client socket
+const client = udp.createSocket('udp4')
+
+
 udpPort.on("message", function (oscMsg, timeTag, info) {
+    console.log("msg received")
     if (!initialized) {
 	initialized = true;
 	currentTime = Date.now();
@@ -68,6 +72,39 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 	console.log('roll: ' + accAngleX)
 	console.log('pitch: ' + accAngleY)
 	console.log('yaw: ' + yaw)
-	io.emit('gyro', {pitch: accAngleX, roll: accAngleY, yaw: yaw});
+	let info = {pitch: accAngleX, roll: accAngleY, yaw: yaw};
+	io.emit('gyro', info);
+	let data = Buffer.from(JSON.stringify(info))
+	client.send(data, 1025, 'localhost', error => {
+	    if (error) {
+		console.log(error)
+		client.close()
+	    } else {
+		console.log('Data sent !!!')
+	    }
+	});
     }
 });
+
+
+// //buffer msg
+// const data = Buffer.from('#01\r')
+
+// client.on('message', (msg, info) => {
+//     console.log('Data received from server : ' + msg.toString())
+//     console.log('Received %d bytes from %s:%d\n', msg.length, info.address, info.port)
+// })
+
+// //sending msg
+// client.send(data, 1025, 'localhost', error => {
+// if (error) {
+//     console.log(error)
+//     client.close()
+// } else {
+//     console.log('Data sent !!!')
+// }
+// })
+
+// setTimeout( () => {
+//     client.close()
+// },1000)
