@@ -78,6 +78,8 @@
       let yaw = 0;
       var socket = io();
       socket.on('gyro', function(msg) {
+	  console.log('received msg from server')
+	  console.log(msg);
 	  pitch = msg.pitch;
 	  roll = msg.roll;
 	  yaw = msg.yaw;

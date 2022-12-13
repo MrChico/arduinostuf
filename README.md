@@ -1,12 +1,23 @@
-Simple instrument which is controlled through an arduino connected gyroscope. 
-The communication between the gyro and the server is done with the js package Johnny Five, the server fwds it to the webpage with websockets.
+This repo holds the infrastructure that lets the gyroscope sensor communicate with a local and remote server.
 
-A simple accompanying drawing is made in p5.
+The `remoteserver.js` runs on a remote machine (currently aws instance at http://3.72.45.118/)
 
-To install:
+The `localserver.js` runs on the same local network that the gyroscope is connected to and receives its input through OSC data.
 
-npm install in main dir and ./public
+The remote and local servers communicate over an SSH tunnel forwarding a tcp connection on port 1025 & 1337
 
-To run:
+## Set up
 
-Connect arduino and `node app.js`
+On the local machine:
+
+- clone repo
+- npm install
+- connect to sensor ethernet (INERTIA) and internet (TODO: make sure we can do both at the same time)
+- set up ssh tunnel to remote machine `ssh -N -L 1025:127.0.0.1:1337 {NAME}@{REMOTEMACHINEIP}
+- `node localserver.js`
+
+On the remote machine:
+
+- clone repo
+- npm install
+- `node remoteserver.js`

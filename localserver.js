@@ -5,8 +5,8 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const path = require('path');
+const net = require('net');
 const osc = require('osc');
-//const board = new five.Board();
 
 // For serving static assets
 app.use(express.static(path.join(__dirname, '/')));
@@ -47,64 +47,44 @@ let gyroAngleY = 0
 let gyroZ = 0;
 let initialized = false;
 
-const udp = require('dgram')
+var client = new net.Socket();
 
-// creating a client socket
-const client = udp.createSocket('udp4')
-
-
-udpPort.on("message", function (oscMsg, timeTag, info) {
-    console.log("msg received")
-    if (!initialized) {
-	initialized = true;
-	currentTime = Date.now();
-    } else {
-	q = oscMsg.args.map(s => s.value);
-	previousTime = currentTime;
-	currentTime = Date.now();
-	elapsedTime = (currentTime - previousTime) / 1000;
-
-	accAngleX = Math.atan(q[1] /   Math.sqrt(q[0] ** 2 + q[2] ** 2)) * 180 / Math.PI;
-	accAngleY = Math.atan(- q[0] / Math.sqrt(q[1] ** 2 + q[2] ** 2)) * 180 / Math.PI;
-
-	yaw = yaw + (q[5] * elapsedTime) / 124;
-
-	console.log('roll: ' + accAngleX)
-	console.log('pitch: ' + accAngleY)
-	console.log('yaw: ' + yaw)
-	let info = {pitch: accAngleX, roll: accAngleY, yaw: yaw};
-	io.emit('gyro', info);
-	let data = Buffer.from(JSON.stringify(info))
-	client.send(data, 1025, 'localhost', error => {
-	    if (error) {
-		console.log(error)
-		client.close()
-	    } else {
-		console.log('Data sent !!!')
-	    }
-	});
-    }
-});
-
-
-// //buffer msg
-// const data = Buffer.from('#01\r')
-
-// client.on('message', (msg, info) => {
-//     console.log('Data received from server : ' + msg.toString())
-//     console.log('Received %d bytes from %s:%d\n', msg.length, info.address, info.port)
-// })
-
-// //sending msg
-// client.send(data, 1025, 'localhost', error => {
-// if (error) {
-//     console.log(error)
-//     client.close()
-// } else {
-//     console.log('Data sent !!!')
-// }
-// })
-
-// setTimeout( () => {
-//     client.close()
-// },1000)
+client.connect(1025, '127.0.0.1', function() {
+    console.log("connection to remote server established")
+    
+    udpPort.on("message", function (oscMsg, timeTag, info) {
+	console.log("osc msg received")
+	if (!initialized) {
+	    initialized = true;
+	    currentTime = Date.now();
+	} else {
+	    q = oscMsg.args.map(s => s.value);
+	    previousTime = currentTime;
+	    currentTime = Date.now();
+	    elapsedTime = (currentTime - previousTime) / 1000;
+	    
+	    accAngleX = Math.atan(q[1] /   Math.sqrt(q[0] ** 2 + q[2] ** 2)) * 180 / Math.PI;
+	    accAngleY = Math.atan(- q[0] / Math.sqrt(q[1] ** 2 + q[2] ** 2)) * 180 / Math.PI;
+	    
+	    yaw = yaw + (q[5] * elapsedTime) / 124;
+	    
+	    console.log('roll: ' + accAngleX)
+	    console.log('pitch: ' + accAngleY)
+	    console.log('yaw: ' + yaw)
+	    let info = {pitch: accAngleX, roll: accAngleY, yaw: yaw};
+	    // send to our local web instance
+	    io.emit('gyro', info);
+	    let data = Buffer.from(JSON.stringify(info))
+	    
+	    // send to remote server
+	    client.write(data, 1025, 'localhost', error => {
+		if (error) {
+		    console.log(error)
+		    client.close()
+		} else {
+		    console.log('Data sent !!!')
+		}
+	    });
+	}
+    });
+})

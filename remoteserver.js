@@ -23,37 +23,23 @@ io.on('connection', (socket) => {
     console.log('a user connected');
 });
 
-server.listen(3001, () => {
-    console.log("listening on *:3001");
+server.listen(3000, () => {
+    console.log("listening on *:3000");
 })
 
+var net = require('net');
 
-const udp = require('dgram')
+var tcpserv = net.createServer(function(socket) {
+    console.log("connected")
+    socket.write('conection established\r\n');
+    socket.pipe(socket);
+    socket.on('data', function(data) {
+	console.log('received ' + data);
+	io.emit("gyro", JSON.parse(data));
+    })
+    socket.on('close', function() {
+	console.log('disconnect');
+    })
+});
 
-
-// creating a client socket
-const client = udp.createSocket('udp4')
-
-//buffer msg
-
-client.on('message', (msg, info) => {
-    let data = JSON.parse(msg.toString());
-    console.log("received gyro data: " + data);
-    io.emit('gyro', data);
-})
-
-client.bind(1025);
-// Prints: server listening 0.0.0.0:41234
-//sending msg
-// client.send(data, 1025, "127.0.0.1", error => {
-// if (error) {
-//     console.log(error)
-//     client.close()
-// } else {
-//     console.log('Data sent !!!')
-// }
-// })
-
-// setTimeout( () => {
-//     client.close()
-// },1000)
+tcpserv.listen(1337, '127.0.0.1');
