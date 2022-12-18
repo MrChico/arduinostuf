@@ -5,15 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#000000">
     <meta name="rnbo-version" content="1.0.0-alpha.5">
-    <title>RNBO Web Export</title>
+    <title>Pendulum</title>
 </head>
 
 <body>
+  <div class="slidecontainer">
+    <input type="range" min="1" max="10" value="2" class="slider" id="wind">
+  </div>
+  <div class="slidecontainer">
+    <input type="range" min="0" max="0.001" step="0.00001" value="0.00004" class="slider" id="gravity">
+  </div>
   <noscript>You need to enable JavaScript to run this app.</noscript>
     <div class="rnbo-root">
-		<div>
-			<h1 id="patcher-title">Pendulum</h1>
-		</div>
+	<div>
+		<h1 id="patcher-title">Pendulum</h1>
+	</div>
         <div id="rnbo-clickable-keyboard">
             <h2>MIDI Keyboard</h2>
             <em id="no-midi-label">No MIDI input</em>
@@ -27,7 +33,7 @@
                     <input id="inport-text" type="text"></input>
                     <input id="inport-submit" className="smallButton" type="submit" value="Send"/>
                 </div>
-            </form>
+            </form>1
         </div>
 		<div id="rnbo-console">
 			<h2>Outports</h2>
@@ -70,9 +76,25 @@
       * {
 	  margin: 0;
       }
+      canvas {
+	  cursor: none;
+      }
     </style>
 
     <script>
+      //util
+
+      function reviver(key, value) {
+	  if(typeof value === 'object' && value !== null) {
+	      if (value.dataType === 'Map') {
+	return new Map(value.value);
+	      }
+	  }
+	  return value;
+      }
+
+
+    
       let pitch = 0;
       let roll = 0;
       let yaw = 0;
@@ -110,6 +132,54 @@
  	  resizeCanvas(windowWidth, windowHeight);
       }
 
+      var windslider = document.getElementById("wind");
+
+      windslider.oninput = function() {
+	  socket.emit("windchange", this.value);
+	  wind = this.value;
+      }
+
+      socket.on("wind", function(newVal) {
+	  windslider.value = newVal;
+	  wind = newVal;
+      })
+
+      var gravityslider = document.getElementById("gravity");
+      gravityslider.oninput = function() {
+	  socket.emit("gravitychange", this.value);
+	  gravity = this.value;
+      }
+
+      socket.on("gravity", function(newVal) {
+	  gravityslider.value = newVal;
+	  gravity = newVal;
+      })
+      
+      window.addEventListener('mousemove', trackPos)
+
+      let mouseY = 0;
+      let mouseX = 0;
+      function trackPos(e) {
+	  mouseY = e.clientY;
+	  mouseX = e.clientX;
+      }
+      let r = Math.floor(Math.random() * 255);
+      let g = 150 + Math.floor(Math.random() * 100);
+      let b = 150 + Math.floor(Math.random() * 100);
+
+      let mice = new Map();
+      socket.on("mice", function(ms) {
+	  let m = new Map();
+	  m = JSON.parse(ms, reviver)
+	  m.delete(r + g + b);
+	  mice = m;
+      })
+      
+      var sendCursor = setInterval(function() {
+	  socket.emit("mouse", mouseX, mouseY, r, g, b);
+      }, 20);
+
+      console.log(r);
       
       function draw() {
 	  angleMode(DEGREES);
@@ -142,7 +212,20 @@
 	  camera(200, 200, 200);
 	  pop();
 	  loop();
+	  // our pointer:
+	  strokeWeight(15);
+	  stroke(r,g,b)
+	  point(mouseX - windowWidth / 2, mouseY -  windowHeight / 2);
+	  // other pointers
+	  mice.forEach(v => {
+	      strokeWeight(10);
+	      console.log('colors')
+	      console.log('r: ' + v.r);
+	      stroke(v.r, v.g, v.b)
+	      point(v.mx - windowWidth / 2, v.my -  windowHeight / 2);
+	  })
       }
+
     </script>
 </body>
 </html>

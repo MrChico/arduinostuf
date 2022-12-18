@@ -15,12 +15,38 @@ app.use('/css', express.static(__dirname + '/css'));
 
 app.get('/', (req, res) => {
     res.sendFile('index.html', {
-	root: (__dirname + '/public')
+	root: (__dirname)
     });
 });
 
+let mice = new Map();
+let wind = 2;
+let gravity = 0.00004;
+
 io.on('connection', (socket) => {
-    console.log('a user connected');
+    io.emit("wind", wind);
+    io.emit("gravity", gravity);
+    let rgb;
+    console.log('usr connected')
+    socket.on("mouse", function(mx, my, r, g, b) {
+	rgb = r + g + b;
+	// Just add the rbg values as index,
+	// not exactly correct but good enough...
+	mice.set(r + g + b, {"mx": mx, "my": my, "r": r, "g": g, "b": b})
+	io.emit("mice", JSON.stringify(mice, replacer))
+    })
+    socket.on('disconnect', function () {
+	mice.delete(rgb);
+    });
+
+    socket.on("windchange", function(newVal) {
+	wind = newVal;
+	io.emit("wind", newVal);
+    })
+    socket.on("gravitychange", function(newVal) {
+	gravity = newVal;
+	io.emit("gravity", newVal);
+    })
 });
 
 server.listen(3000, () => {
@@ -43,3 +69,16 @@ var tcpserv = net.createServer(function(socket) {
 });
 
 tcpserv.listen(1337, '127.0.0.1');
+
+
+//utils:
+function replacer(key, value) {
+  if(value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
+  } else {
+    return value;
+  }
+}
