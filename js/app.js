@@ -1,6 +1,6 @@
 import("../node_modules//socket.io/dist/socket.js");
-let socket = io();
-async function setup() {
+let device;
+async function rnbosetup() {
     const patchExportURL = "export/patch.export.json";
     // Create AudioContext
     const WAContext = window.AudioContext || window.webkitAudioContext;
@@ -53,7 +53,6 @@ async function setup() {
     } catch (e) {}
 
     // Create the device
-    let device;
     try {
         device = await RNBO.createDevice({ context, patcher });
     } catch (err) {
@@ -98,23 +97,6 @@ async function setup() {
     if (typeof guardrails === "function")
         guardrails();
 }
-
-// var pitch = 0;
-// var roll = 0;
-// var yaw = 0;
-
-// socket.on('gyro', function(msg) {
-   
-//     pitch = msg.pitch.angle;
-//     roll  = msg.roll.angle;
-//     yaw   = msg.yaw.angle;
-//     console.log("  pitch       : ", pitch);
-//     console.log("  roll        : ", roll);
-//     console.log("  yaw         : ", yaw);
-//     document.getElementById("rate").value = pitch / 360;
-//     document.getElementById("rate2").value = roll / 360;
-//     document.getElementById("rate3").value = yaw / 360;
-// });
 
 function loadRNBOScript(version) {
     return new Promise((resolve, reject) => {
@@ -351,4 +333,169 @@ function makeMIDIKeyboard(device) {
     });
 }
 
-setup();
+rnbosetup();
+
+
+//util
+
+function reviver(key, value) {
+    if(typeof value === 'object' && value !== null) {
+	if (value.dataType === 'Map') {
+	    return new Map(value.value);
+	}
+    }
+    return value;
+}
+
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+	this.classList.toggle("active");
+	var content = this.nextElementSibling;
+	if (content.style.display === "block") {
+	    content.style.display = "none";
+	} else {
+	    content.style.display = "block";
+	}
+    });
+}
+
+let pitch = 0;
+let roll = 0;
+let yaw = 0;
+var socket = io();
+socket.on('gyro', function(msg) {
+    console.log('received msg from server')
+    console.log(msg);
+    pitch = msg.pitch;
+    roll = msg.roll;
+    yaw = msg.yaw;
+});
+
+let positions = [];
+let t = 0;
+let num = 400;
+let radius = 200;
+let wind = 2;
+let gravity = 0.00004;
+let initialPositions = [];
+
+
+function setup() {
+    let c = createCanvas(windowWidth, windowHeight, WEBGL);
+    for (let i = 0; i < num; i++) {
+  	let r = (1 / sqrt(random())) * radius;
+  	let theta = random(TWO_PI);
+  	let x = cos(theta) * r;
+  	let y = sin(theta) * r;
+  	let z = random() * 2;
+  	positions.push({"x": x, "y": y, "z": z});
+	initialPositions.push({"x": x, "y": y, "z": z});
+    }
+}
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
+
+var windslider = document.getElementById("wind");
+
+windslider.oninput = function() {
+    socket.emit("windchange", this.value);
+    wind = this.value;
+}
+
+socket.on("wind", function(newVal) {
+    windslider.value = newVal;
+    wind = newVal;
+})
+
+var gravityslider = document.getElementById("gravity");
+gravityslider.oninput = function() {
+    socket.emit("gravitychange", this.value);
+    const param = device.parametersById.get("motion");
+    param.value = this.value * 2000;
+    gravity = this.value;
+}
+
+socket.on("gravity", function(newVal) {
+    gravityslider.value = newVal;
+    gravity = newVal;
+})
+
+window.addEventListener('mousemove', trackPos)
+
+let mouseY = 0;
+let mouseX = 0;
+function trackPos(e) {
+    mouseY = e.clientY;
+    mouseX = e.clientX;
+}
+let r = Math.floor(Math.random() * 255);
+let g = 150 + Math.floor(Math.random() * 100);
+let b = 150 + Math.floor(Math.random() * 100);
+
+let mice = new Map();
+socket.on("mice", function(ms) {
+    let m = new Map();
+    m = JSON.parse(ms, reviver)
+    m.delete(r + g + b);
+    mice = m;
+})
+
+var sendCursor = setInterval(function() {
+    socket.emit("mouse", mouseX, mouseY, r, g, b);
+}, 20);
+
+function draw() {
+    angleMode(DEGREES);
+    background(0);
+    let xAxis = createVector(1,0,0);
+    let yAxis = createVector(0,1,0);
+    let zAxis = createVector(0,0,1);
+    rotate(pitch, xAxis);
+    rotate(roll,  yAxis);
+    rotate(yaw,   zAxis);
+    push();
+    t += 0.01;
+    for (let i = 0; i < num; i++) {
+	let x = positions[i].x;
+	let y = positions[i].y;
+	let distance = sqrt(x ** 2 + y ** 2);
+	positions[i].x = x - gravity * x * distance
+	    + wind * (sqrt(distance - radius)) * (noise(t, i) - .5);
+	positions[i].y = y - gravity * y * distance
+	    + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
+	if (Number.isNaN(positions[i].x) || Number.isNaN(positions[i].y)) {
+	    positions[i].x = initialPositions[i].x;
+	    positions[i].y = initialPositions[i].y;
+	} 
+	strokeWeight((noise(t, i) * 8 + 3));
+	stroke('white')
+	point(positions[i].x, positions[i].y, positions[i].z);
+    }
+    camera(200, 200, 200);
+    pop();
+    loop();
+    rotate(- pitch, xAxis);
+    rotate(- roll,  yAxis);
+    rotate(- yaw,   zAxis);
+
+    // our pointer:
+    strokeWeight(15);
+    stroke(r,g,b)
+    point(mouseX - windowWidth / 2, mouseY -  windowHeight / 2);
+    // other pointers
+    mice.forEach(v => {
+	strokeWeight(10);
+	console.log('colors')
+	console.log('r: ' + v.r);
+	stroke(v.r, v.g, v.b)
+	point(v.mx - windowWidth / 2, v.my -  windowHeight / 2);
+    })
+    rotate(pitch, xAxis);
+    rotate(roll,  yAxis);
+    rotate(yaw,   zAxis);
+}
+

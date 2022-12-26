@@ -9,11 +9,14 @@
 </head>
 
 <body>
-  <div class="slidecontainer">
-    <input type="range" min="1" max="10" value="2" class="slider" id="wind">
-  </div>
-  <div class="slidecontainer">
-    <input type="range" min="0" max="0.001" step="0.00001" value="0.00004" class="slider" id="gravity">
+  <button type="button" class="collapsible">controls</button>
+  <div class="content">
+    <div class="slidecontainer">
+      <input type="range" min="1" max="10" value="2" class="slider" id="wind">
+    </div>
+    <div class="slidecontainer">
+      <input type="range" min="0" max="0.0005" step="0.000005" value="0.00004" class="slider" id="gravity">
+    </div>
   </div>
   <noscript>You need to enable JavaScript to run this app.</noscript>
     <div class="rnbo-root">
@@ -64,7 +67,7 @@
     <!-- Import RNBO Engine Wrapper -->
     <!-- Make sure to include the RNBO engine version to the version of your exported code, found in rnbopackage.json -->
     <script src="/socket.io/socket.io.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script src="js/app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.js"></script>
     <style>
       .rnbo-root {
@@ -79,153 +82,40 @@
       canvas {
 	  cursor: none;
       }
+      /* Style the button that is used to open and close the collapsible content */
+      .collapsible {
+	  background-color: #333;
+	  border-radius: 20px 20px 0px 100px;
+	  cursor: pointer;
+	  padding: 18px;
+	  width: 6%;
+	  right: 0%;
+	  top: 95%;
+	  float: right;
+	  position: fixed;
+	  border: none;
+	  text-align: center;
+	  color: white;
+	  outline: none;
+	  font-size: 15px;
+      }
+      
+      /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+      .active, .collapsible:hover {
+	  background-color: #ccc;
+      }
+      
+      /* Style the collapsible content. Note: hidden by default */
+      .content {
+	  padding: 0 18px;
+	  position: fixed;
+	  top: 90%;
+	  left: 90%;
+	  display: none;
+	  overflow: hidden;
+	  background-color: #f1f1f1;
+      } 
     </style>
-
-    <script>
-      //util
-
-      function reviver(key, value) {
-	  if(typeof value === 'object' && value !== null) {
-	      if (value.dataType === 'Map') {
-	return new Map(value.value);
-	      }
-	  }
-	  return value;
-      }
-
-
     
-      let pitch = 0;
-      let roll = 0;
-      let yaw = 0;
-      var socket = io();
-      socket.on('gyro', function(msg) {
-	  console.log('received msg from server')
-	  console.log(msg);
-	  pitch = msg.pitch;
-	  roll = msg.roll;
-	  yaw = msg.yaw;
-      });
-
-      let positions = [];
-      let t = 0;
-      let num = 200;
-      let radius = 200;
-      let wind = 2;
-      let gravity = 0.00004;
-      let initialPositions = [];
-
-      
-      function setup() {
- 	  let c = createCanvas(windowWidth, windowHeight, WEBGL);
-	  for (let i = 0; i < num; i++) {
-  	      let r = (1 / sqrt(random())) * radius;
-  	      let theta = random(TWO_PI);
-  	      let x = cos(theta) * r;
-  	      let y = sin(theta) * r;
-  	      let z = random() * 2;
-  	      positions.push({"x": x, "y": y, "z": z});
-	      initialPositions.push({"x": x, "y": y, "z": z});
-          }
-      }
-      function windowResized() {
- 	  resizeCanvas(windowWidth, windowHeight);
-      }
-
-      var windslider = document.getElementById("wind");
-
-      windslider.oninput = function() {
-	  socket.emit("windchange", this.value);
-	  wind = this.value;
-      }
-
-      socket.on("wind", function(newVal) {
-	  windslider.value = newVal;
-	  wind = newVal;
-      })
-
-      var gravityslider = document.getElementById("gravity");
-      gravityslider.oninput = function() {
-	  socket.emit("gravitychange", this.value);
-	  gravity = this.value;
-      }
-
-      socket.on("gravity", function(newVal) {
-	  gravityslider.value = newVal;
-	  gravity = newVal;
-      })
-      
-      window.addEventListener('mousemove', trackPos)
-
-      let mouseY = 0;
-      let mouseX = 0;
-      function trackPos(e) {
-	  mouseY = e.clientY;
-	  mouseX = e.clientX;
-      }
-      let r = Math.floor(Math.random() * 255);
-      let g = 150 + Math.floor(Math.random() * 100);
-      let b = 150 + Math.floor(Math.random() * 100);
-
-      let mice = new Map();
-      socket.on("mice", function(ms) {
-	  let m = new Map();
-	  m = JSON.parse(ms, reviver)
-	  m.delete(r + g + b);
-	  mice = m;
-      })
-      
-      var sendCursor = setInterval(function() {
-	  socket.emit("mouse", mouseX, mouseY, r, g, b);
-      }, 20);
-
-      console.log(r);
-      
-      function draw() {
-	  angleMode(DEGREES);
-	  background(0);
-	  let xAxis = createVector(1,0,0);
-	  let yAxis = createVector(0,1,0);
-	  let zAxis = createVector(0,0,1);
-	  rotate(pitch, xAxis);
-	  rotate(roll,  yAxis);
-	  rotate(yaw,   zAxis);
-	  push();
-	  t += 0.01;
-	  for (let i = 0; i < num; i++) {
-	      let x = positions[i].x;
-	      let y = positions[i].y;
-	      let distance = sqrt(x ** 2 + y ** 2);
-	      if (Number.isNaN(x) || Number.isNaN(y) || y == 0 || x == 0) {
-		  positions[i].x = initialPositions[i].x;
-		  positions[i].y = initialPositions[i].y;
-	      } else {
-		  positions[i].x = x - gravity * x * distance
-		      + wind * (sqrt(distance - radius)) * (noise(t, i) - .5);
-		  positions[i].y = y - gravity * y * distance
-		      + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
-	      }
-	      strokeWeight((noise(t, i) * 8 + 3));
-	      stroke('white')
-	      point(positions[i].x, positions[i].y, positions[i].z);
-	  }
-	  camera(200, 200, 200);
-	  pop();
-	  loop();
-	  // our pointer:
-	  strokeWeight(15);
-	  stroke(r,g,b)
-	  point(mouseX - windowWidth / 2, mouseY -  windowHeight / 2);
-	  // other pointers
-	  mice.forEach(v => {
-	      strokeWeight(10);
-	      console.log('colors')
-	      console.log('r: ' + v.r);
-	      stroke(v.r, v.g, v.b)
-	      point(v.mx - windowWidth / 2, v.my -  windowHeight / 2);
-	  })
-      }
-
-    </script>
 </body>
 </html>
