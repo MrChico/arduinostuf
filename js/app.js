@@ -365,13 +365,25 @@ for (i = 0; i < coll.length; i++) {
 let pitch = 0;
 let roll = 0;
 let yaw = 0;
+let lastPitch = 0
+let lastRoll = 0
+let lastFrame = 0;
+let lastYaw = 0
 var socket = io();
+let kk = 0;
+let time = Date.now();
+
 socket.on('gyro', function(msg) {
-    console.log('received msg from server')
-    console.log(msg);
-    pitch = msg.pitch;
-    roll = msg.roll;
-    yaw = msg.yaw;
+    if (frameCount - lastFrame > 10) {
+	lastPitch = pitch;
+	lastRoll = roll;
+	lastYaw = yaw;
+	lastFrame = frameCount;
+	pitch = msg.pitch;
+	roll = msg.roll;
+	yaw = msg.yaw;
+	time = Date.now();
+    }
 });
 
 let positions = [];
@@ -385,6 +397,7 @@ let initialPositions = [];
 
 function setup() {
     let c = createCanvas(windowWidth, windowHeight, WEBGL);
+    clear()
     for (let i = 0; i < num; i++) {
   	let r = (1 / sqrt(random())) * radius;
   	let theta = random(TWO_PI);
@@ -393,6 +406,9 @@ function setup() {
   	let z = random() * 2;
   	positions.push({"x": x, "y": y, "z": z});
 	initialPositions.push({"x": x, "y": y, "z": z});
+	strokeWeight((noise(t, i) * 8 + 3));
+	stroke('white')
+	point(positions[i].x, positions[i].y, positions[i].z);
     }
 }
 function windowResized() {
@@ -454,9 +470,13 @@ function draw() {
     let xAxis = createVector(1,0,0);
     let yAxis = createVector(0,1,0);
     let zAxis = createVector(0,0,1);
-    rotate(pitch, xAxis);
-    rotate(roll,  yAxis);
-    rotate(yaw,   zAxis);
+    let interpolated = Math.min(1, (frameCount - lastFrame) / 20);
+    let p = lastPitch * (1 - interpolated) + pitch * interpolated;
+    let r = lastRoll  * (1 - interpolated) + roll  * interpolated;
+    let y = lastYaw   * (1 - interpolated) + yaw   * interpolated;
+    rotate(p, xAxis);
+    rotate(r, yAxis);
+    rotate(y, zAxis);
     push();
     t += 0.01;
     for (let i = 0; i < num; i++) {
@@ -471,31 +491,31 @@ function draw() {
 	    positions[i].x = initialPositions[i].x;
 	    positions[i].y = initialPositions[i].y;
 	} 
-	strokeWeight((noise(t, i) * 8 + 3));
+	strokeWeight((noise(t, i) * 12 + 8));
 	stroke('white')
 	point(positions[i].x, positions[i].y, positions[i].z);
     }
     camera(200, 200, 200);
     pop();
     loop();
-    rotate(- pitch, xAxis);
-    rotate(- roll,  yAxis);
-    rotate(- yaw,   zAxis);
+    // rotate(- pitch, xAxis);
+    // rotate(- roll,  yAxis);
+    // rotate(- yaw,   zAxis);
 
-    // our pointer:
-    strokeWeight(15);
-    stroke(r,g,b)
-    point(mouseX - windowWidth / 2, mouseY -  windowHeight / 2);
-    // other pointers
-    mice.forEach(v => {
-	strokeWeight(10);
-	console.log('colors')
-	console.log('r: ' + v.r);
-	stroke(v.r, v.g, v.b)
-	point(v.mx - windowWidth / 2, v.my -  windowHeight / 2);
-    })
-    rotate(pitch, xAxis);
-    rotate(roll,  yAxis);
-    rotate(yaw,   zAxis);
+    // // our pointer:
+    // strokeWeight(15);
+    // stroke(r,g,b)
+    // point(mouseX - windowWidth / 2, mouseY -  windowHeight / 2);
+    // // other pointers
+    // // mice.forEach(v => {
+    // // 	strokeWeight(10);
+    // // 	console.log('colors')
+    // // 	console.log('r: ' + v.r);
+    // // 	stroke(v.r, v.g, v.b)
+    // // 	point(v.mx - windowWidth / 2, v.my -  windowHeight / 2);
+    // // })
+    // rotate(pitch, xAxis);
+    // rotate(roll,  yAxis);
+    // rotate(yaw,   zAxis);
 }
 

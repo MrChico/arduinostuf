@@ -61,7 +61,13 @@ var tcpserv = net.createServer(function(socket) {
     socket.pipe(socket);
     socket.on('data', function(data) {
 	console.log('received ' + data);
-	io.emit("gyro", JSON.parse(data));
+	try {
+	    let parsed = JSON.parse(data);
+	    io.emit("gyro", JSON.parse(data));
+	    console.log("position updated")
+	} catch {
+	    console.log("coudl not parse msg received");
+	}
     })
     socket.on('close', function() {
 	console.log('disconnect');
