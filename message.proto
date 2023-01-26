@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "timestamp.proto";
+import "latlng.proto";
+
+message Payload {
+  oneof payload {
+    ParameterChange parameter_change = 1;
+    PendulumGyro pendulum_gyro = 2;
+    DataShare data_share = 3;
+    ConnectionInfo connection_info = 4;
+  }
+}
+
+message ParameterChange {
+  required string instrument_id = 1;
+  required string parameter_id = 2;
+  required double parameter_value = 3;
+  optional Timestamp timestamp = 4;
+  optional LatLng lat_long = 5;
+}
+
+message PendulumGyro {
+  required int32 pitch = 1;
+  required int32 yaw = 2;
+  required int32 roll = 3;
+  optional Timestamp timestamp = 4;
+}
+
+message DataShare {
+  required string info_hash = 1;
+}
+
+message ConnectionInfo {
+  required int32 participants_online = 1;
+  required bool pendulum_online = 2;
+}
