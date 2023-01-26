@@ -155,18 +155,23 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 		lastUpdate = currentTime;
 		let gd = {pendulumGyro: 
 			  GyroData.create({
-			      pitch: pitchLPF,
-			      roll: rollLPF,
-			      yaw: yawLPF,
-			      timestamp: Timestamp.create({seconds: currentTime / 1000,
+			      pitch: Math.floor(pitchLPF),
+			      roll: Math.floor(rollLPF),
+			      yaw: Math.floor(yawLPF),
+			      timestamp: Timestamp.create({seconds: Math.floor(currentTime / 1000),
 							   nanos: (currentTime % 1000) * 1000000
 							  })
 			  })
 			 };
-		gdinstance = Payload.create(gd);
-		const buf = Payload.encode(gdinstance).finish();
-		console.log("sending...")
-		ws.send(buf);
+		const err = Payload.verify(gd);
+		if (!err) {
+		    gdinstance = Payload.create(gd);
+		    const buf = Payload.encode(gdinstance).finish();
+		    console.log("sending...")
+		    ws.send(buf);
+		} else {
+		    console.log("invalid payload...")
+		}
 	    }
 	} else {
 	    if (calibration == 0) {
