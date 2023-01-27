@@ -1,7 +1,7 @@
 import("../node_modules//socket.io/dist/socket.js");
 let device;
 async function rnbosetup() {
-    const patchExportURL = "export/patch.export.json";
+    const patchExportURL = "export2/patch.export.json";
     // Create AudioContext
     const WAContext = window.AudioContext || window.webkitAudioContext;
     const context = new WAContext();
@@ -334,7 +334,7 @@ function makeMIDIKeyboard(device) {
 }
 
 rnbosetup();
-
+disableFriendlyErrors = true;
 
 //util
 
@@ -369,36 +369,36 @@ let lastPitch = 0
 let lastRoll = 0
 let lastFrame = 0;
 let lastYaw = 0
-var socket = io();
+//var socket = io();
 let kk = 0;
 let time = Date.now();
 
-socket.on('gyro', function(msg) {
-    if (frameCount - lastFrame > 10) {
-	lastPitch = pitch;
-	lastRoll = roll;
-	lastYaw = yaw;
-	lastFrame = frameCount;
-	pitch = msg.pitch;
-	roll = msg.roll;
-	yaw = msg.yaw;
-	time = Date.now();
-    }
-});
+// socket.on('gyro', function(msg) {
+//     if (frameCount - lastFrame > 5) {
+// 	lastPitch = pitch;
+// 	lastRoll = roll;
+// 	lastYaw = yaw;
+// 	lastFrame = frameCount;
+// 	pitch = msg.pitch;
+// 	roll = msg.roll;
+// 	yaw = msg.yaw;
+// 	time = Date.now();
+//     }
+// });
 
 let positions = [];
 let t = 0;
 let num = 400;
-let radius = 200;
+let radius = 160;
 let wind = 2;
 let gravity = 0.00004;
 let initialPositions = [];
 
 
 function setup() {
-    let c = createCanvas(windowWidth, windowHeight, WEBGL);
+    let c = createCanvas(windowWidth, windowHeight);
     clear()
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < 400; i++) {
   	let r = (1 / sqrt(random())) * radius;
   	let theta = random(TWO_PI);
   	let x = cos(theta) * r;
@@ -418,27 +418,27 @@ function windowResized() {
 var windslider = document.getElementById("wind");
 
 windslider.oninput = function() {
-    socket.emit("windchange", this.value);
+//    socket.emit("windchange", this.value);
     wind = this.value;
 }
 
-socket.on("wind", function(newVal) {
-    windslider.value = newVal;
-    wind = newVal;
-})
+// socket.on("wind", function(newVal) {
+//     windslider.value = newVal;
+//     wind = newVal;
+// })
 
 var gravityslider = document.getElementById("gravity");
 gravityslider.oninput = function() {
-    socket.emit("gravitychange", this.value);
+//    socket.emit("gravitychange", this.value);
     const param = device.parametersById.get("motion");
     param.value = this.value * 2000;
     gravity = this.value;
 }
 
-socket.on("gravity", function(newVal) {
-    gravityslider.value = newVal;
-    gravity = newVal;
-})
+// socket.on("gravity", function(newVal) {
+//     gravityslider.value = newVal;
+//     gravity = newVal;
+// })
 
 window.addEventListener('mousemove', trackPos)
 
@@ -464,22 +464,41 @@ var sendCursor = setInterval(function() {
     socket.emit("mouse", mouseX, mouseY, r, g, b);
 }, 20);
 
+function drawGradient(x, y) {
+  var radius = dim/2;
+  var h = random(0, 360);
+  for (r = radius; r > 0; --r) {
+    fill(h, 90, 90);
+    ellipse(x, y, r, r);
+    h = (h + 1) % 360;
+  }
+}
+
 function draw() {
     angleMode(DEGREES);
-    background(0);
-    let xAxis = createVector(1,0,0);
-    let yAxis = createVector(0,1,0);
-    let zAxis = createVector(0,0,1);
-    let interpolated = Math.min(1, (frameCount - lastFrame) / 20);
-    let p = lastPitch * (1 - interpolated) + pitch * interpolated;
-    let r = lastRoll  * (1 - interpolated) + roll  * interpolated;
-    let y = lastYaw   * (1 - interpolated) + yaw   * interpolated;
-    rotate(p, xAxis);
-    rotate(r, yAxis);
-    rotate(y, zAxis);
+    background(0,0,0);
+    // let xAxis = createVector(1,0,0);
+    // let yAxis = createVector(0,1,0);
+    // let zAxis = createVector(0,0,1);
+    // let interpolated = Math.min(1, (frameCount - lastFrame) / 20);
+    // let p = lastPitch * (1 - interpolated) + pitch * interpolated;
+    // let r = lastRoll  * (1 - interpolated) + roll  * interpolated; // 
+    // let y = lastYaw   * (1 - interpolated) + yaw   * interpolated;
+    // rotate(p, xAxis);
+    // rotate(r, yAxis);
+    // rotate(y, zAxis);
+    translate(windowWidth / 2, windowHeight / 2);
     push();
+
+    // let c1 = color(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255));
+    // let c = lerpColor(c1, color(255,255,255), 0);
+    // strokeWeight(200);
+    // stroke(c);
+    // stroke(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255))
+    // point(0, 0, 0);
+
     t += 0.01;
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < 400; i++) {
 	let x = positions[i].x;
 	let y = positions[i].y;
 	let distance = sqrt(x ** 2 + y ** 2);
@@ -488,14 +507,30 @@ function draw() {
 	positions[i].y = y - gravity * y * distance
 	    + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
 	if (Number.isNaN(positions[i].x) || Number.isNaN(positions[i].y)) {
-	    positions[i].x = initialPositions[i].x;
-	    positions[i].y = initialPositions[i].y;
+	    positions[i].x = initialPositions[i].x;// + 100 * noise(t,i) - 50;
+	    positions[i].y = initialPositions[i].y;// + 100 * noise(t,i) - 50;
 	} 
-	strokeWeight((noise(t, i) * 12 + 8));
-	stroke('white')
-	point(positions[i].x, positions[i].y, positions[i].z);
+
+	//	console.log(noise(i))
+	// let c = lerpColor(c1, color(255,255,255), inter);
+	x = positions[i].x;
+	y = positions[i].y;
+	distance = sqrt(x ** 2 + y ** 2);
+	let dist = sqrt(sqrt(sqrt(Math.abs(distance - radius))))
+//	console.log(dist);
+	for (let k = 1; k < 8; k++) {
+	    let wt = Math.floor(2 + 4 * (noise(t,i) * (8 - k)) * (dist / 2));
+//	    console.log("weight: " + wt);
+	    strokeWeight(wt);
+	    let c = lerpColor(color(20,20,20),  color((1 / dist) * 255,(1 / dist) * 255, (1 / dist) * 255), k / 8);
+	    let c1 = Math.floor(255 * ((k + 1) / 8));
+//	    console.log("color: " + c1)
+	    stroke(c);
+//	    stroke(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255))
+	    point(positions[i].x, positions[i].y, positions[i].z);
+	}
     }
-    camera(200, 200, 200);
+//    camera(200, 200, 200);
     pop();
     loop();
     // rotate(- pitch, xAxis);
