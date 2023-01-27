@@ -507,8 +507,8 @@ function draw() {
 	positions[i].y = y - gravity * y * distance
 	    + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
 	if (Number.isNaN(positions[i].x) || Number.isNaN(positions[i].y)) {
-	    positions[i].x = initialPositions[i].x;// + 100 * noise(t,i) - 50;
-	    positions[i].y = initialPositions[i].y;// + 100 * noise(t,i) - 50;
+	    positions[i].x = initialPositions[i].x;// + 200 * noise(i) - 50;
+	    positions[i].y = initialPositions[i].y;// + 200 * noise(i) - 50;
 	} 
 
 	//	console.log(noise(i))
@@ -516,13 +516,13 @@ function draw() {
 	x = positions[i].x;
 	y = positions[i].y;
 	distance = sqrt(x ** 2 + y ** 2);
-	let dist = sqrt(sqrt(sqrt(Math.abs(distance - radius))))
+	let dist = sqrt(sqrt(sqrt(Math.abs(distance - radius))) / 2);
 //	console.log(dist);
 	for (let k = 1; k < 8; k++) {
-	    let wt = Math.floor(2 + 4 * (noise(t,i) * (8 - k)) * (dist / 2));
+	    let wt = Math.floor(4 + 4 * (noise(t,i) * (8 - k)) * (dist));
 //	    console.log("weight: " + wt);
 	    strokeWeight(wt);
-	    let c = lerpColor(color(20,20,20),  color((1 / dist) * 255,(1 / dist) * 255, (1 / dist) * 255), k / 8);
+	    let c = lerpColor(color(0,0,0),  color((255 / dist),(255 / dist), (255 / dist)), k / 8);
 	    let c1 = Math.floor(255 * ((k + 1) / 8));
 //	    console.log("color: " + c1)
 	    stroke(c);
