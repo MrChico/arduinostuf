@@ -18,13 +18,12 @@ var maxReconnectDelay = 16000;
 function connect() {
     ws = new WebSocket(url);
     ws.addEventListener('open', onWebsocketOpen);
-    ws.addEventListener('open', onWebsocketOpen);
     ws.addEventListener(
         "message",
         msgHandler
       );
 
-//    ws.addEventListener('close',  onWebsocketClose);
+    ws.addEventListener('close',  onWebsocketClose);
 }
 
 function msgHandler(msg) {
