@@ -488,8 +488,10 @@ function draw() {
     // rotate(r, yAxis);
     // rotate(y, zAxis);
     translate(windowWidth / 2, windowHeight / 2);
+    translate(noise(t) * 55, noise(t + 45) * 55);
     push();
-
+    let g = gravity + sin(frameCount / 4) * gravity - sin(frameCount / 17 + 15) * gravity * 1.6;
+    let r = radius - noise(t / 10) * 150
     // let c1 = color(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255));
     // let c = lerpColor(c1, color(255,255,255), 0);
     // strokeWeight(200);
@@ -498,37 +500,37 @@ function draw() {
     // point(0, 0, 0);
 
     t += 0.01;
-    for (let i = 0; i < 400; i++) {
+    for (let i = 0; i < num; i++) {
 	let x = positions[i].x;
 	let y = positions[i].y;
 	let distance = sqrt(x ** 2 + y ** 2);
-	positions[i].x = x - gravity * x * distance
-	    + wind * (sqrt(distance - radius)) * (noise(t, i) - .5);
-	positions[i].y = y - gravity * y * distance
-	    + wind * (sqrt(distance - radius)) * (noise(t + 5, i) - .5);
+	positions[i].x = x - g * x * distance
+	    + wind * (sqrt(distance - r)) * (noise(t, i) - .5);
+	positions[i].y = y - g * y * distance
+	    + wind * (sqrt(distance - r)) * (noise(t + 5, i) - .5);
 	if (Number.isNaN(positions[i].x) || Number.isNaN(positions[i].y)) {
 	    positions[i].x = initialPositions[i].x;// + 200 * noise(i) - 50;
 	    positions[i].y = initialPositions[i].y;// + 200 * noise(i) - 50;
 	} 
-
 	//	console.log(noise(i))
 	// let c = lerpColor(c1, color(255,255,255), inter);
 	x = positions[i].x;
 	y = positions[i].y;
 	distance = sqrt(x ** 2 + y ** 2);
-	let dist = sqrt(sqrt(sqrt(Math.abs(distance - radius))) / 2);
-//	console.log(dist);
-	for (let k = 1; k < 8; k++) {
-	    let wt = Math.floor(4 + 4 * (noise(t,i) * (8 - k)) * (dist));
-//	    console.log("weight: " + wt);
-	    strokeWeight(wt);
-	    let c = lerpColor(color(0,0,0),  color((255 / dist),(255 / dist), (255 / dist)), k / 8);
-	    let c1 = Math.floor(255 * ((k + 1) / 8));
-//	    console.log("color: " + c1)
-	    stroke(c);
-//	    stroke(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255))
-	    point(positions[i].x, positions[i].y, positions[i].z);
-	}
+	let dist = sqrt(sqrt(sqrt(Math.abs(distance - radius))) / 1.8);
+	//	console.log(dist);
+	let k = 6;
+//	for (let k = 1; k < 8; k++) {
+	let wt = Math.floor(4 + 4 * noise(t,i) * 4 * (dist));
+	//	    console.log("weight: " + wt);
+	strokeWeight(wt);
+	let c = lerpColor(color(0,0,0),  color((255 / dist),(255 / dist), (255 / dist)), k / 8);
+	let c1 = Math.floor(255 * ((k + 1) / 8));
+	//	    console.log("color: " + c1)
+	stroke(c);
+	//	    stroke(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255))
+	point(positions[i].x, positions[i].y, positions[i].z);
+//	}
     }
 //    camera(200, 200, 200);
     pop();
