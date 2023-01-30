@@ -1,6 +1,8 @@
+// Run this whole guy from within Max
 const osc = require('osc');
 const WebSocket = require('ws');
 const protobuf = require('protobufjs');
+const Max = require('max-api');
 
 var udpPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
@@ -40,29 +42,9 @@ let GyroData;
 let ws;
 
 const url = "wss://swarm.haywirez.xyz?source=pendulum";
-//let waitTime = 100;
-
-// var openWebSocket = async function() {
-//     ws = new WebSocket(url);
-//     ws.on('open', function() {
-//         console.log('connected');
-//     });
-//     ws.on('close', function(er) {
-//         console.log('disconnected: ' + er);
-//         openWebSocket();
-//     });
-//     ws.on('error', async function(err) {
-// 	console.log("error from the server..." + err);
-// 	waitTime += 200 + Math.random() * 10;
-// 	console.log("reconnecting in... " + waitTime);
-// 	await new Promise(r => setTimeout(r, waitTime));
-// 	openWebSocket();
-//     })
-// }
-
-var initialReconnectDelay = 1000;
-var currentReconnectDelay = initialReconnectDelay;
-var maxReconnectDelay = 16000;
+const initialReconnectDelay = 1000;
+let currentReconnectDelay = initialReconnectDelay;
+const maxReconnectDelay = 16000;
 
 function connect() {
     ws = new WebSocket(url);
@@ -109,9 +91,7 @@ run().catch(err => console.log(err));
 // Listen for incoming OSC messages.
 let lastUpdate;
 udpPort.on("message", function (oscMsg, timeTag, info) {
-    //	console.log("going forward!");
     i++;
-    //	console.log("osc msg received")
     if (!initialized) {
 	initialized = true;
 	currentTime = Date.now();
@@ -140,18 +120,12 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 	    pitchLPF = pitch * lpfCoeff + pitchLPF * (1 - lpfCoeff);
 	    rollLPF = roll * lpfCoeff + rollLPF * (1 - lpfCoeff);
 	    yawLPF = yaw * lpfCoeff + yawLPF * (1 - lpfCoeff);
-	    // console.log("gyroAngleX: " + gyroAngleX);
-	    // console.log("gyroAngleY: " + gyroAngleY);
-	    // console.log("pitch: " + pitch);
-	    // console.log("roll: " + roll);
-	    // let info = {pitch: pitch, roll: roll, yaw: yaw};
 	    let infoLPF = {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF};
-	    // console.log(info);
-	    // console.log("low passed")
+//	    console.log(infoLPF);
+
+	    Max.setDict("orientation", {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF});
 	    // forward to websocket
-//	    console.log("time elapsed since last update: " + (currentTime - lastUpdate))
-	    if (ws !== null && ws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 200) {
-//		console.log("ready to send!")
+	    if (ws !== null && ws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 80) {
 		lastUpdate = currentTime;
 		let gd = {pendulumGyro: 
 			  GyroData.create({
