@@ -2,7 +2,11 @@
 const osc = require('osc');
 const WebSocket = require('ws');
 const protobuf = require('protobufjs');
+const path = require('path');
 const Max = require('max-api');
+
+
+const wss = new WebSocket.Server({ port: 8001 });
 
 var udpPort = new osc.UDPPort({
     localAddress: "0.0.0.0",
@@ -53,12 +57,13 @@ function connect() {
 }
 
 function onWebsocketOpen() {
-    console.log("connected to websocket!");
+    console.log("connected to remote websocket!");
     currentReconnectDelay = initialReconnectDelay;
 }
 
-function onWebsocketClose() {
+function onWebsocketClose(e) {
     console.log("disconnected.")
+    console.log(e);
     ws = null;
     let delay = currentReconnectDelay + Math.floor(Math.random() * 3000);
     console.log("reconnecting in: " + delay + " ms");
@@ -75,12 +80,21 @@ function reconnectToWebsocket() {
     connect();
 }
 
+let ourws;
+
 async function run() {
     root = await protobuf.load('message.proto');
     Timestamp = root.lookupType('Timestamp');
     Payload = root.lookupType('Payload');
     GyroData = root.lookupType('PendulumGyro');
-    connect();
+
+
+    wss.on('connection', function connection(ours) {
+	console.log("we are connected locally");
+	ourws = ours;
+    });    
+    
+ //   connect();
 }
 
 
@@ -121,11 +135,20 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 	    rollLPF = roll * lpfCoeff + rollLPF * (1 - lpfCoeff);
 	    yawLPF = yaw * lpfCoeff + yawLPF * (1 - lpfCoeff);
 	    let infoLPF = {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF};
-//	    console.log(infoLPF);
-
+	    // console.log(infoLPF);
+	    // forward the values to max
 	    Max.setDict("orientation", {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF});
-	    // forward to websocket
-	    if (ws !== null && ws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 80) {
+
+	    // forward the values to our local site (animation)
+	    if (typeof(ourws) !== "undefined" && ourws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 80) {
+		//		console.log("we could be sending right now");
+		//		    console.log("sending: " + JSON.stringify(infoLPF));
+		//		let data = Buffer.from(JSON.stringify(infoLPF))
+		//		console.log("as buffer" + data);
+		ourws.send(JSON.stringify(infoLPF));
+	    }
+	    // forward to remote server
+	    if (typeof(ws) !== "undefined" && ws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 80) {
 		lastUpdate = currentTime;
 		let gd = {pendulumGyro: 
 			  GyroData.create({

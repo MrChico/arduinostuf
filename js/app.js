@@ -1,4 +1,44 @@
-import("../node_modules//socket.io/dist/socket.js");
+let positions = [];
+let t = 0;
+let num = 400;
+let radius = 160;
+let wind = 2;
+let gravity = 0.00004;
+let initialPositions = [];
+
+
+let pitch = 0;
+let roll = 0;
+let yaw = 0;
+let lastPitch = 0
+let lastRoll = 0
+let lastFrame = 0;
+let lastYaw = 0
+//var socket = io();
+let kk = 0;
+let time = Date.now();
+
+//import("../node_modules//socket.io/dist/socket.js");
+//let ws = import('ws');
+let ws = new WebSocket("ws://localhost:8001")
+ws.addEventListener('open', onWebsocketOpen);
+ws.addEventListener('close',  onWebsocketClose);
+ws.addEventListener('message', onMsgReceive);
+
+function onWebsocketOpen() {
+    console.log("we are connected");
+}
+
+function onWebsocketClose() {
+    console.log("we were disconnected");
+}
+
+function onMsgReceive(msg) {
+    let orientation = JSON.parse(msg.data);
+    lastPitch = pitch;
+    pitch = orientation.pitch;
+}
+
 let device;
 async function rnbosetup() {
     const patchExportURL = "export2/patch.export.json";
@@ -362,17 +402,6 @@ for (i = 0; i < coll.length; i++) {
     });
 }
 
-let pitch = 0;
-let roll = 0;
-let yaw = 0;
-let lastPitch = 0
-let lastRoll = 0
-let lastFrame = 0;
-let lastYaw = 0
-//var socket = io();
-let kk = 0;
-let time = Date.now();
-
 // socket.on('gyro', function(msg) {
 //     if (frameCount - lastFrame > 5) {
 // 	lastPitch = pitch;
@@ -386,13 +415,6 @@ let time = Date.now();
 //     }
 // });
 
-let positions = [];
-let t = 0;
-let num = 400;
-let radius = 160;
-let wind = 2;
-let gravity = 0.00004;
-let initialPositions = [];
 
 
 function setup() {
@@ -452,18 +474,6 @@ let r = Math.floor(Math.random() * 255);
 let g = 150 + Math.floor(Math.random() * 100);
 let b = 150 + Math.floor(Math.random() * 100);
 
-let mice = new Map();
-socket.on("mice", function(ms) {
-    let m = new Map();
-    m = JSON.parse(ms, reviver)
-    m.delete(r + g + b);
-    mice = m;
-})
-
-var sendCursor = setInterval(function() {
-    socket.emit("mouse", mouseX, mouseY, r, g, b);
-}, 20);
-
 function drawGradient(x, y) {
   var radius = dim/2;
   var h = random(0, 360);
@@ -480,9 +490,9 @@ function draw() {
     // let xAxis = createVector(1,0,0);
     // let yAxis = createVector(0,1,0);
     // let zAxis = createVector(0,0,1);
-    // let interpolated = Math.min(1, (frameCount - lastFrame) / 20);
-    // let p = lastPitch * (1 - interpolated) + pitch * interpolated;
-    // let r = lastRoll  * (1 - interpolated) + roll  * interpolated; // 
+    let interpolated = Math.min(1, (frameCount - lastFrame) / 50);
+    let p = lastPitch * (1 - interpolated) + pitch * interpolated;
+    // let r = lastRoll  * (1 - interpolated) + roll  * interpolated; 
     // let y = lastYaw   * (1 - interpolated) + yaw   * interpolated;
     // rotate(p, xAxis);
     // rotate(r, yAxis);
@@ -490,8 +500,8 @@ function draw() {
     translate(windowWidth / 2, windowHeight / 2);
     translate(noise(t) * 55, noise(t + 45) * 55);
     push();
-    let g = gravity + sin(frameCount / 4) * gravity - sin(frameCount / 17 + 15) * gravity * 1.6;
-    let r = radius - noise(t / 10) * 150
+    let g = gravity + sin(frameCount / 4) * gravity - sin(frameCount / 17 + 15) * gravity * 1.6 + (p / 60) * gravity;
+    let rr = radius - noise(t / 10) * 150
     // let c1 = color(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255));
     // let c = lerpColor(c1, color(255,255,255), 0);
     // strokeWeight(200);
@@ -505,9 +515,9 @@ function draw() {
 	let y = positions[i].y;
 	let distance = sqrt(x ** 2 + y ** 2);
 	positions[i].x = x - g * x * distance
-	    + wind * (sqrt(distance - r)) * (noise(t, i) - .5);
+	    + wind * (sqrt(distance - rr)) * (noise(t, i) - .5);
 	positions[i].y = y - g * y * distance
-	    + wind * (sqrt(distance - r)) * (noise(t + 5, i) - .5);
+	    + wind * (sqrt(distance - rr)) * (noise(t + 5, i) - .5);
 	if (Number.isNaN(positions[i].x) || Number.isNaN(positions[i].y)) {
 	    positions[i].x = initialPositions[i].x;// + 200 * noise(i) - 50;
 	    positions[i].y = initialPositions[i].y;// + 200 * noise(i) - 50;
