@@ -31,7 +31,7 @@ function msgHandler(msg) {
     const decoded = Payload.decode(buf);
     console.log("msg received")
     console.log(decoded)
-    if (decoded.parameterChange && decoded.parameterChange.instrumentId == "bells") {
+    if (decoded.parameterChange && decoded.parameterChange.instrumentId == "pulse") {
         const incomingParameterId = decoded.parameterChange?.parameterId;
         const incomingParameterValue =
               decoded.parameterChange?.parameterValue;
