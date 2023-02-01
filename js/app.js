@@ -52,7 +52,7 @@ function onMsgReceive(msg) {
     lastRoll = roll;
     roll = orientation.roll;
 }
-
+connect();
 let device;
 async function rnbosetup() {
     const patchExportURL = "export2/patch.export.json";
