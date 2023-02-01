@@ -516,7 +516,8 @@ function draw() {
     translate(noise(t) * 55, noise(t + 45) * 55);
     push();
     let g = gravity + sin(frameCount / 4) * gravity - sin(frameCount / 17 + 15) * gravity * 1.6 + (p / 60) * gravity;
-    let rr = radius - noise(t / 10) * 150 + (r / 8);
+    let rr = radius - noise(t / 10) * 150
+    let w = wind + wind * (r / 180);
     // let c1 = color(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255));
     // let c = lerpColor(c1, color(255,255,255), 0);
     // strokeWeight(200);
