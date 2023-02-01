@@ -18,12 +18,24 @@ let lastYaw = 0
 let kk = 0;
 let time = Date.now();
 
-//import("../node_modules//socket.io/dist/socket.js");
-//let ws = import('ws');
-let ws = new WebSocket("ws://localhost:8001")
-ws.addEventListener('open', onWebsocketOpen);
-ws.addEventListener('close',  onWebsocketClose);
-ws.addEventListener('message', onMsgReceive);
+const url = "ws://localhost:8001";
+
+let initialReconnectDelay = 1000;
+let currentReconnectDelay = initialReconnectDelay;
+let maxReconnectDelay = 16000;
+
+function connect() {
+    ws = new WebSocket(url);
+    ws.addEventListener('open', onWebsocketOpen);
+    ws.addEventListener(
+        "message",
+        onMsgReceive
+      );
+
+    ws.addEventListener('close',  onWebsocketClose);
+}
+
+
 
 function onWebsocketOpen() {
     console.log("we are connected");
@@ -37,6 +49,8 @@ function onMsgReceive(msg) {
     let orientation = JSON.parse(msg.data);
     lastPitch = pitch;
     pitch = orientation.pitch;
+    lastRoll = roll;
+    roll = orientation.roll;
 }
 
 let device;
@@ -492,6 +506,7 @@ function draw() {
     // let zAxis = createVector(0,0,1);
     let interpolated = Math.min(1, (frameCount - lastFrame) / 50);
     let p = lastPitch * (1 - interpolated) + pitch * interpolated;
+    let r = lastRoll * (1 - interpolated) + roll * interpolated;
     // let r = lastRoll  * (1 - interpolated) + roll  * interpolated; 
     // let y = lastYaw   * (1 - interpolated) + yaw   * interpolated;
     // rotate(p, xAxis);
@@ -501,7 +516,7 @@ function draw() {
     translate(noise(t) * 55, noise(t + 45) * 55);
     push();
     let g = gravity + sin(frameCount / 4) * gravity - sin(frameCount / 17 + 15) * gravity * 1.6 + (p / 60) * gravity;
-    let rr = radius - noise(t / 10) * 150
+    let rr = radius - noise(t / 10) * 150 + (r / 8);
     // let c1 = color(Math.floor(noise(i) * 255),Math.floor(noise(i) * 255),Math.floor(noise(i) * 255));
     // let c = lerpColor(c1, color(255,255,255), 0);
     // strokeWeight(200);
