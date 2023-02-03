@@ -94,7 +94,7 @@ async function run() {
 	ourws = ours;
     });    
     
- //   connect();
+    connect();
 }
 
 
@@ -134,10 +134,14 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 	    pitchLPF = pitch * lpfCoeff + pitchLPF * (1 - lpfCoeff);
 	    rollLPF = roll * lpfCoeff + rollLPF * (1 - lpfCoeff);
 	    yawLPF = yaw * lpfCoeff + yawLPF * (1 - lpfCoeff);
+	    accX = q[3] * lpfCoeff + accX * (1 - lpfCoeff);
+	    accY = q[4] * lpfCoeff + accY * (1 - lpfCoeff);
+	    accZ = q[5] * lpfCoeff + accZ * (1 - lpfCoeff);
 	    let infoLPF = {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF};
 	    // console.log(infoLPF);
 	    // forward the values to max
 	    Max.setDict("orientation", {pitch: pitchLPF, roll: rollLPF, yaw: yawLPF});
+	    Max.setDict("acceleration", {accX: accX, accY: accY, accZ: accZ});
 
 	    // forward the values to our local site (animation)
 	    if (typeof(ourws) !== "undefined" && ourws.readyState == WebSocket.OPEN && (currentTime - lastUpdate) > 80) {
@@ -198,6 +202,9 @@ udpPort.on("message", function (oscMsg, timeTag, info) {
 		yaw = 0;
 		gyroAngleX = roll
 		gyroAngleY = pitch;
+		accX = q[3];
+		accY = q[4];
+		accZ = q[5];
 		calibrated = true;
 	    }
 	}
